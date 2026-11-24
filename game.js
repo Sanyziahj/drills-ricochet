@@ -297,6 +297,9 @@
   const keys = {};
   const touchMove = { x: 0, y: 0, active: false };
   const touchAim = { x: 1, y: 0, active: false, lx: 1, ly: 0 };
+  const CTL = { size: 1, op: 1, lh: false, vib: true, auto: true };
+  try { Object.assign(CTL, JSON.parse(localStorage.getItem('ricochet-controls-v1') || '{}')); } catch (e) {}
+  function ctlBuzz(ms) { try { if (CTL.vib && navigator.vibrate && document.body.classList.contains('touch')) navigator.vibrate(ms); } catch (e) {} }
   const mouse = { on: false, wx: 200, wy: 200 };
   let padButtons = [];
   let frameDts = [];
@@ -603,6 +606,7 @@
     return Math.abs(d) < e.shieldArc;
   }
   function killEnemy(e, bounced) {
+    ctlBuzz(14);
     if (e.dead) return;
     e.dead = true;
     const big = e.kind === 'boss';
@@ -622,6 +626,7 @@
   }
   function hurtPlayer() {
     if (player.inv > 0 || mode !== 'play') return;
+    ctlBuzz(30);
     player.inv = 1.35;
     lives -= 1;
     shake = 0.22;
@@ -1372,6 +1377,7 @@
     player.inv = Math.max(0, player.inv - dt);
     player.fireCd = Math.max(0, player.fireCd - dt);
     player.specialCd = Math.max(0, player.specialCd - dt);
+    if (CTL.auto && touchAim.active && Math.hypot(touchAim.x, touchAim.y) > 0.55) tryFire();
     if (queueFire || keys.Space) tryFire();
     queueFire = false;
     if (queueSpecial) { queueSpecial = false; trySpecial(); }
@@ -2078,6 +2084,38 @@
     else menuBack();
   });
   btnMute.addEventListener('pointerdown', function (e) { e.preventDefault(); unlockAudio(); setMute(!save.mute); });
+  /* phone controls: settings, vibration, app-switch pause */
+  function ctlPaint() {
+    const b = document.body;
+    b.style.setProperty('--rk', String(CTL.size));
+    b.style.setProperty('--ro', String(CTL.op));
+    b.classList.toggle('lh', !!CTL.lh);
+    const p = document.getElementById('ctlPanel');
+    if (p) p.querySelectorAll('[data-k]').forEach(function (x) { x.classList.toggle('sel', String(CTL[x.dataset.k]) === x.dataset.v); });
+  }
+  function ctlSave() { try { localStorage.setItem('ricochet-controls-v1', JSON.stringify(CTL)); } catch (e) {} }
+  const btnCtl = document.getElementById('btnCtl');
+  const ctlPanel = document.getElementById('ctlPanel');
+  if (btnCtl && ctlPanel) {
+    btnCtl.addEventListener('pointerdown', function (e) {
+      e.preventDefault(); unlockAudio();
+      if (mode === 'play') togglePause();
+      ctlPanel.classList.add('show'); ctlPaint();
+    });
+    ctlPanel.addEventListener('pointerdown', function (e) {
+      e.preventDefault(); e.stopPropagation();
+      const t = e.target.closest('[data-k],[data-close]');
+      if (!t) return;
+      if (t.dataset.close != null) { ctlPanel.classList.remove('show'); return; }
+      const k = t.dataset.k, v = t.dataset.v;
+      CTL[k] = (v === 'true') ? true : (v === 'false') ? false : Number(v);
+      ctlSave(); ctlPaint(); ctlBuzz(10);
+    });
+  }
+  ctlPaint();
+  function ctlAway() { if (mode === 'play') togglePause(); }
+  document.addEventListener('visibilitychange', function () { if (document.hidden) ctlAway(); });
+  window.addEventListener('pagehide', ctlAway);
   bindStick(stickL, knobL, 'move');
   bindStick(stickR, knobR, 'aim');
   window.addEventListener('resize', function () { layoutMode(); if (menu.kind === 'stages' && overlay.classList.contains('show')) showOverlay('stages'); });
@@ -2136,6 +2174,8 @@
     setAimAngle: function (a) { aimLock = a; player.aim = a; },
     clearAim: function () { aimLock = null; },
     fire: function () { queueFire = true; },
+    controls: function () { return Object.assign({}, CTL); },
+    shots: function () { return shots.filter(function (s) { return s.owner === 'player'; }).length; },
     special: function () { queueSpecial = true; },
     confirm: function () { menuConfirm(); },
     startStage: function (n) {
