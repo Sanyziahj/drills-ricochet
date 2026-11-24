@@ -138,11 +138,44 @@ body.touch.land .menu-btn { padding: 6px 8px; margin: 3px 0; font-size: 13px; }
 body.touch.land .stage-grid { grid-template-columns: repeat(4, 1fr); }
 body.touch.land .stage-grid .menu-btn { font-size: 11px; padding: 5px 2px; }
 body.touch:not(.land) .card h1 { font-size: 26px; }
+
+/* phone controls upgrade */
+body { --rk: 1; --ro: 1; }
+#btnPause { min-height: 44px; min-width: 64px; }
+#btnMute { min-height: 44px; min-width: 52px; padding: 0 6px; border-radius: 14px; border: 2px solid #9aabba; background: #24313b; color: #ffe1a8; font-size: 12px; }
+#btnCtl { min-width: 44px; min-height: 44px; padding: 0; font-size: 20px; letter-spacing: 0; }
+#sysRow { display: flex; gap: 4px; justify-content: center; }
+body.touch.land #sysRow { display: grid; grid-template-columns: 1fr 44px; width: 116px; }
+body.touch.land #sysRow #btnPause { grid-column: 1 / 3; }
+body.touch.land #sysRow #btnMute, body.touch.land #sysRow #btnCtl { min-width: 0; }
+body.touch #gutterL { flex-direction: column; }
+#btnSpecial { min-height: 52px; min-width: 96px; }
+.stick { width: calc(120px * var(--rk)); height: calc(120px * var(--rk)); }
+body.touch.land .stick { width: calc(108px * var(--rk)); height: calc(108px * var(--rk)); }
+body.touch.land #app { grid-template-columns: calc(124px * var(--rk)) minmax(0, 1fr) calc(132px * var(--rk)); }
+body.touch.land #btnSpecial { min-width: 100px; }
+body.touch .stick, body.touch #btnFire, body.touch #btnSpecial { opacity: var(--ro); }
+body.touch.lh #app { grid-template-areas: "stage stage" "right left"; }
+body.touch.land.lh #app { grid-template-areas: "right stage left"; grid-template-columns: calc(132px * var(--rk)) minmax(0, 1fr) calc(124px * var(--rk)); }
+body:not(.touch) #btnCtl { display: none; }
+#ctlPanel { display: none; position: fixed; inset: 0; z-index: 9; align-items: center; justify-content: center; padding: 8px; background: rgba(6,10,14,.6); }
+#ctlPanel.show { display: flex; }
+#ctlPanel .crow { display: flex; align-items: center; gap: 6px; margin: 6px 0; justify-content: center; }
+#ctlPanel .crow b { width: 92px; text-align: right; font-size: 12px; letter-spacing: .08em; color: #8fd0c4; }
+#ctlPanel .crow button { min-width: 56px; min-height: 44px; border-radius: 12px; border: 2px solid #3d4a57; background: #1a222b; color: #c5d0da; font: 800 13px inherit; font-family: inherit; opacity: .6; transition: transform .12s, opacity .12s, box-shadow .12s; }
+#ctlPanel .crow button.sel { opacity: 1; transform: scale(1.06); color: #1a1206; background: linear-gradient(180deg, #ffe08a, #f0a03a); border-color: #fff1c4; box-shadow: 0 0 18px rgba(255,176,60,.8); }
+body.touch.land #ctlPanel .card h1 { font-size: 16px; }
+body.touch.land #ctlPanel .crow { margin: 2px 0; }
+body.touch.land #ctlPanel .crow button { min-height: 44px; }
+body.touch.land #ctlPanel .menu-btn { margin: 4px 0 0; }
+#ctlPanel .menu-btn { min-height: 44px; }
+body.touch:not(.land) #app { align-content: end; grid-template-rows: min(calc(100vw * 0.86), calc(100dvh - 252px)) 252px; }
 </style>
 </head>
 <body>
 <div id="app">
   <aside id="gutterL">
+    <button id="btnSpecial" class="ctrl" type="button">MINE</button>
     <div id="stickL" class="stick" role="slider" aria-label="Move"><i></i></div>
   </aside>
   <div id="stage">
@@ -151,8 +184,7 @@ body.touch:not(.land) .card h1 { font-size: 26px; }
       <div class="row">
         <span id="hudTier">TANKS</span>
         <span id="hudStage">1 · Drill Yard</span>
-        <button id="btnMute" type="button">MUTE</button>
-      </div>
+              </div>
       <div class="row">
         <span id="hudScore">0</span>
         <span id="hudBest">BEST 0</span>
@@ -161,13 +193,19 @@ body.touch:not(.land) .card h1 { font-size: 26px; }
       <div id="bossBar" hidden><i></i></div>
     </div>
     <div id="overlay" class="show"><div class="card" id="card"></div></div>
+    <div id="ctlPanel"><div class="card"><h1><span>PHONE</span>CONTROLS</h1>
+      <div class="crow"><b>SIZE</b><button data-k="size" data-v="0.9">S</button><button data-k="size" data-v="1">M</button><button data-k="size" data-v="1.1">L</button></div>
+      <div class="crow"><b>OPACITY</b><button data-k="op" data-v="0.55">55</button><button data-k="op" data-v="0.8">80</button><button data-k="op" data-v="1">100</button></div>
+      <div class="crow"><b>HANDS</b><button data-k="lh" data-v="false">RIGHT</button><button data-k="lh" data-v="true">LEFT</button></div>
+      <div class="crow"><b>AUTO-FIRE</b><button data-k="auto" data-v="true">ON</button><button data-k="auto" data-v="false">OFF</button></div>
+      <div class="crow"><b>VIBRATE</b><button data-k="vib" data-v="true">ON</button><button data-k="vib" data-v="false">OFF</button></div>
+      <button class="menu-btn sel" data-close>DONE</button></div></div>
   </div>
   <aside id="gutterR">
-    <button id="btnPause" class="ctrl" type="button">PAUSE</button>
+    <div id="sysRow"><button id="btnPause" class="ctrl" type="button">PAUSE</button><button id="btnMute" class="ctrl" type="button">MUTE</button><button id="btnCtl" class="ctrl" type="button" aria-label="Control settings">&#9881;</button></div>
     <div id="stickR" class="stick" role="slider" aria-label="Aim"><i></i></div>
     <div id="fireRow">
       <button id="btnFire" class="ctrl" type="button">FIRE</button>
-      <button id="btnSpecial" class="ctrl" type="button">MINE</button>
     </div>
   </aside>
 </div>
